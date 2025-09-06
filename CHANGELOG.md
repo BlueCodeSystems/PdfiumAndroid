@@ -1,3 +1,22 @@
+## 2.0.0 (2025-09-06)
+### Breaking changes
+- Increase minSdk to 28
+- Maven group changed to `com.github.BlueCodeSystems`
+
+### New
+- Modernize build toolchain: Gradle 8.7, AGP 8.6.0, Java 17
+- Target modern Android: compileSdk 35, targetSdk 35, Build Tools 35.0.0
+- Pin NDK via `android.ndkVersion=26.2.11394342`
+- Add Maven Central publishing helpers (Central bundle zip + checksums)
+
+### CI/Publishing
+- JitPack publishes to Maven Local (generates POM + artifacts)
+- Disable signing on JitPack via `-PskipSigning=true`
+- Derive `GROUP` from repository owner in `jitpack.yml`
+
+### Docs
+- Update README with modernization details, JitPack flags, and install instructions
+
 ## 1.9.2 (2022-05-22)
 * Functionally the same as 1.9.1. Just fixing some documentation errors on Maven Central
 

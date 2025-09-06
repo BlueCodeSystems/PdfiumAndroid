@@ -8,6 +8,7 @@ before_install:
   - ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;26.2.11394342"
 
 install:
-  # Build release AAR; JitPack will pick it up
-  - ./gradlew --no-daemon -x test -x lint assembleRelease
-
+  # Publish to Maven Local so JitPack can find POM/artifacts
+  # Derive GROUP from repo owner and skip signing for JitPack
+  - OWNER=$(git config --get remote.origin.url | sed -E 's#.*[:/ ]([^/]+)/[^/]+(\.git)?$#\1#'); echo "Using GROUP=com.github.${OWNER} VERSION=${VERSION} (skipSigning)"
+  - ./gradlew --no-daemon -x test -x lint -PskipSigning=true -PGROUP=com.github.${OWNER} -PVERSION_NAME=${VERSION} publishToMavenLocal

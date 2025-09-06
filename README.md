@@ -34,7 +34,9 @@ This is functionally the same as 1.9.1 just fixing some documentation on maven c
 ## Installation
 Add to _build.gradle_:
 
-`compile 'com.github.mhiew:pdfium-android:1.9.2'`
+`implementation 'com.github.BlueCodeSystems:pdfium-android:<version>'`
+
+Replace `<version>` with the JitPack tag or release you want to consume.
 
 Library is available in jcenter and Maven Central repositories.
 

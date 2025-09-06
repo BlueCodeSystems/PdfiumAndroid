@@ -4,6 +4,7 @@ apply plugin: 'io.codearte.nexus-staging'
 import org.gradle.api.tasks.bundling.Zip
 
 def isReleaseBuild() { !(version?.toString() ?: '').contains("SNAPSHOT") }
+def isSkipSigning() { project.hasProperty('skipSigning') && project.property('skipSigning').toString() == 'true' }
 
 def getRepositoryUsername() { hasProperty('sonatypeUsername') ? sonatypeUsername : (hasProperty('ossrhUsername') ? ossrhUsername : "") }
 
@@ -74,17 +75,20 @@ afterEvaluate { project ->
   }
 
   signing {
-    if (project.hasProperty('useGpgCmd') || System.getenv('ORG_GRADLE_PROJECT_useGpgCmd') == 'true') {
-      useGpgCmd()
+    if (!isSkipSigning()) {
+      if (project.hasProperty('useGpgCmd') || System.getenv('ORG_GRADLE_PROJECT_useGpgCmd') == 'true') {
+        useGpgCmd()
+      }
+      required {
+        isReleaseBuild() && (
+          gradle.taskGraph.hasTask(":publish") ||
+          gradle.taskGraph.allTasks.any { it.name.toLowerCase().contains('publish') }
+        )
+      }
+      sign publishing.publications.maven
+    } else {
+      required { false }
     }
-    required {
-      isReleaseBuild() && (
-        gradle.taskGraph.hasTask(":publish") ||
-        gradle.taskGraph.hasTask(":publishToMavenLocal") ||
-        gradle.taskGraph.allTasks.any { it.name.toLowerCase().contains('publish') }
-      )
-    }
-    sign publishing.publications.maven
   }
 
   nexusStaging {

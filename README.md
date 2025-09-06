@@ -38,6 +38,18 @@ Add to _build.gradle_:
 
 Library is available in jcenter and Maven Central repositories.
 
+## Maven Central bundle (manual upload)
+
+Use the helper script to build, sign, checksum, and zip a Central-ready bundle without publishing:
+
+`./scripts/central-bundle.sh`
+
+Requirements:
+- Set a release `VERSION_NAME` (no `SNAPSHOT`) in `gradle.properties`.
+- GPG available or provide in-memory signing props (`-PsigningKey`, `-PsigningPassword`).
+
+Outputs a zip at `build/distributions/central-bundle-<artifactId>-<version>.zip` suitable for upload at `https://s01.oss.sonatype.org/`.
+
 ## Methods inconsistency
 Version 1.8.0 added method for getting page size - `PdfiumCore#getPageSize(...)`.
 It is important to note, that this method does not require page to be opened. However, there are also

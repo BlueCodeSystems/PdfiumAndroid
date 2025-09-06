@@ -1,0 +1,127 @@
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+apply plugin: 'io.codearte.nexus-staging'
+import org.gradle.api.tasks.bundling.Zip
+
+def isReleaseBuild() { !(version?.toString() ?: '').contains("SNAPSHOT") }
+
+def getRepositoryUsername() { hasProperty('sonatypeUsername') ? sonatypeUsername : (hasProperty('ossrhUsername') ? ossrhUsername : "") }
+
+def getRepositoryPassword() { hasProperty('sonatypePassword') ? sonatypePassword : (hasProperty('ossrhPassword') ? ossrhPassword : "") }
+
+android {
+  publishing {
+    singleVariant("release") {
+      withSourcesJar()
+      withJavadocJar()
+    }
+  }
+}
+
+afterEvaluate { project ->
+  publishing {
+    publications {
+      maven(MavenPublication) {
+        from components.release
+        artifactId = POM_SETTING_ARTIFACT_ID
+        pom {
+          name = POM_SETTING_NAME
+          packaging = POM_SETTING_PACKAGING
+          description = POM_SETTING_DESCRIPTION
+          url = POM_SETTING_URL
+          scm {
+            url = POM_SETTING_SCM_URL
+            connection = POM_SETTING_SCM_CONNECTION
+            developerConnection = POM_SETTING_SCM_DEV_CONNECTION
+          }
+          licenses {
+            license {
+              name = POM_SETTING_LICENCE_NAME
+              url = POM_SETTING_LICENCE_URL
+              distribution = POM_SETTING_LICENCE_DIST
+            }
+          }
+          developers {
+            developer {
+              id = POM_SETTING_DEVELOPER_ID
+              name = POM_SETTING_DEVELOPER_NAME
+            }
+          }
+        }
+      }
+    }
+    repositories {
+      // Sonatype (Snapshots/Staging)
+      maven {
+        name = "sonatype"
+        def sonatypeRepositoryURL = isReleaseBuild() ?
+          "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/" :
+          "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+        url = uri(sonatypeRepositoryURL)
+        credentials {
+          username = getRepositoryUsername()
+          password = getRepositoryPassword()
+        }
+      }
+      // Local Central bundle (for manual upload) when -PcentralBundle=true
+      if (project.hasProperty('centralBundle') && project.property('centralBundle').toString() == 'true') {
+        maven {
+          name = "centralBundle"
+          url = uri("${buildDir}/central-bundle")
+        }
+      }
+    }
+  }
+
+  signing {
+    if (project.hasProperty('useGpgCmd') || System.getenv('ORG_GRADLE_PROJECT_useGpgCmd') == 'true') {
+      useGpgCmd()
+    }
+    required {
+      isReleaseBuild() && (
+        gradle.taskGraph.hasTask(":publish") ||
+        gradle.taskGraph.hasTask(":publishToMavenLocal") ||
+        gradle.taskGraph.allTasks.any { it.name.toLowerCase().contains('publish') }
+      )
+    }
+    sign publishing.publications.maven
+  }
+
+  nexusStaging {
+    serverUrl = "https://s01.oss.sonatype.org/service/local/"
+    username = getRepositoryUsername()
+    password = getRepositoryPassword()
+  }
+
+  // Checksum and zip helpers for Central bundle
+  if (project.hasProperty('centralBundle') && project.property('centralBundle').toString() == 'true') {
+    // Generate SHA-256 and SHA-512 for all files in central-bundle
+    tasks.register('generateCentralBundleChecksums') {
+      group = 'publishing'
+      description = 'Generates SHA256/SHA512 checksums for the Central bundle.'
+      dependsOn tasks.matching { it.name == 'publishMavenPublicationToCentralBundleRepository' }
+      doLast {
+        def dir = file("${buildDir}/central-bundle")
+        if (!dir.exists()) return
+        ant.checksum(fileext: ".sha256", algorithm: "SHA-256") {
+          fileset(dir: dir)
+        }
+        ant.checksum(fileext: ".sha512", algorithm: "SHA-512") {
+          fileset(dir: dir)
+        }
+      }
+    }
+
+    tasks.register('zipCentralBundle', Zip) {
+      group = 'distribution'
+      description = 'Zips the Central bundle directory for manual upload.'
+      dependsOn 'generateCentralBundleChecksums'
+      from("${buildDir}/central-bundle")
+      def artifactId = project.findProperty("POM_SETTING_ARTIFACT_ID") ?: project.name
+      def versionName = (project.version?.toString()) ?: (project.findProperty("VERSION_NAME") ?: "unspecified")
+      archiveBaseName.set("central-bundle-${artifactId}")
+      archiveVersion.set(versionName)
+      destinationDirectory.set(file("${buildDir}/distributions"))
+    }
+  }
+}

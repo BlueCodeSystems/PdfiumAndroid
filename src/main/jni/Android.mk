@@ -10,13 +10,6 @@ LOCAL_SRC_FILES := $(LOCAL_PATH)/lib/$(ARCH_PATH)/libmodpdfium.so
 
 include $(PREBUILT_SHARED_LIBRARY)
 
-#c++_shared
-include $(CLEAR_VARS)
-LOCAL_MODULE := libmodc++_shared
-
-LOCAL_SRC_FILES := $(LOCAL_PATH)/lib/$(ARCH_PATH)/libc++_shared.so
-
-include $(PREBUILT_SHARED_LIBRARY)
 
 #libmodft2
 include $(CLEAR_VARS)
@@ -42,6 +35,7 @@ LOCAL_CFLAGS += -DHAVE_PTHREADS
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 LOCAL_SHARED_LIBRARIES += aospPdfium
 LOCAL_LDLIBS += -llog -landroid -ljnigraphics
+LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
 
 LOCAL_SRC_FILES :=  $(LOCAL_PATH)/src/mainJNILib.cpp
 

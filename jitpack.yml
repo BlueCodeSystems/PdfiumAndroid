@@ -1,0 +1,13 @@
+jdk:
+  - openjdk17
+
+before_install:
+  # Ensure Android SDK is writable and licensed, then install required components
+  - echo "sdk.dir=$ANDROID_HOME" > local.properties
+  - yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null || true
+  - ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;26.2.11394342"
+
+install:
+  # Build release AAR; JitPack will pick it up
+  - ./gradlew --no-daemon -x test -x lint assembleRelease
+

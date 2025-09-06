@@ -13,7 +13,7 @@ The purpose is to remove old support libraries so we no longer need to use jetif
 
 It will be used with the forked [AndroidPdFViewer](https://github.com/mhiew/AndroidPdfViewer)
 
-## Modern Android Upgrade
+## Modern Android Upgrade (2.0.0
 This fork modernizes the build and publishing setup to current Android tooling while preserving the original API.
 
 - Gradle: 8.7
